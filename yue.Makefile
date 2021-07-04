@@ -16,7 +16,7 @@ define yue_compilation =
 	mkdir -p ${EXPORT_PATH}
 	echo -e "\033[1m[\033[32mINFO\033[0m\033[1m] >>> Compilation Task: ${SOURCE_PATH} -> ${EXPORT_PATH}\033[0m"
 	compilation_task_start_time=$(date "+%s")
-	yue -t ${EXPORT_PATH} ${SOURCE_PATH}
+	yue -m -t ${EXPORT_PATH} ${SOURCE_PATH}
 	YUE_COMPLICATION_EXIT_CODE=$?
 	if [ ! ${YUE_COMPLICATION_EXIT_CODE} = 0 ]; then
 		echo -e "\033[1m[\033[31mERROR\033[0m\033[1m] >>> Something went wrong, please check your configuration. (::${YUE_COMPLICATION_EXIT_CODE})\033[0m"
