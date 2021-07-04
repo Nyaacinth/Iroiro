@@ -17,12 +17,13 @@ define yue_compilation =
 	echo -e "\033[1m[\033[32mINFO\033[0m\033[1m] >>> Compilation Task: ${SOURCE_PATH} -> ${EXPORT_PATH}\033[0m"
 	compilation_task_start_time=$(date "+%s")
 	yue -t ${EXPORT_PATH} ${SOURCE_PATH}
-	if [ ! $? = 0 ]; then
-		echo -e "\033[1m[\033[31mERROR\033[0m\033[1m] >>> Something went wrong, please check your sources.\033[0m"
-		exit 255
+	YUE_COMPLICATION_EXIT_CODE=$?
+	if [ ! ${YUE_COMPLICATION_EXIT_CODE} = 0 ]; then
+		echo -e "\033[1m[\033[31mERROR\033[0m\033[1m] >>> Something went wrong, please check your configuration. (::${YUE_COMPLICATION_EXIT_CODE})\033[0m"
+		exit
 	fi
 	compilation_task_end_time=$(date "+%s")
-	echo -e "\033[1m[\033[32mINFO\033[0m\033[1m] >>> Task Finished! Takes $((compilation_task_end_time - compilation_task_start_time)) seconds\033[0m"
+	echo -e "\033[1m[\033[32mINFO\033[0m\033[1m] >>> Task Finished! (finished in $((compilation_task_end_time - compilation_task_start_time)) seconds)\033[0m"
 
 endef
 
@@ -32,4 +33,3 @@ default: ; $(value yue_compilation)
 .ONESHELL:
 .SILENT:
 # end_flags
-
