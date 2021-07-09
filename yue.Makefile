@@ -1,4 +1,13 @@
 define yue_compilation =
+	
+	if hash yue 2>/dev/null; then
+		echo -e "\033[1m[\033[32mINFO\033[0m\033[1m] >>> \c"
+		yue -v
+		echo -e "\033[0m\c"
+	else
+		echo -e "\033[1m[\033[31mERROR\033[0m\033[1m] >>> Yue Compiler is required, but not found. Aborting...\033[0m"
+		exit 255
+	fi
 
 	SOURCE_PATH=source
 	EXPORT_PATH=export
