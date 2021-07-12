@@ -29,6 +29,7 @@ function enum_filename() {
 # Set Options
 build_source=source
 build_target=export
+build_hooks=hooks
 build_minify=false
 if [ -f build.conf ]; then
     source build.conf
@@ -64,12 +65,18 @@ mkdir -p "${build_target}"
 print_info "Build Task: ${build_source} -> ${build_target} (minify: ${build_minify})"
 build_task_start_time=$(date "+%s")
 yue "${build_source}" -t "${build_target}" `if [ "${build_minify}" = true ]; then echo '-m'; fi`
-enum_filename ${build_source} | while read current_filename; do
+enum_filename "${build_source}" | while read current_filename; do
     if [ ! "${current_filename##*.}" = "yue" ]; then
         mkdir -p `echo \`dirname "${current_filename}"\` | sed "s/^${build_source}\//${build_target}\//"`
         cp "${current_filename}" "$(echo "${current_filename}" | sed "s/^${build_source}\//${build_target}\//")"
         echo "Copied ${current_filename}"
     fi
 done
+if [ -d "${build_hooks}" ] && [ ! "$(ls -A ${build_hooks})" = "" ]; then
+    enum_filename "${build_hooks}" | while read current_filename; do
+        print_info "Running Hooks Provided by ${current_filename}"
+        source "${current_filename}"
+    done
+fi
 build_task_end_time=$(date "+%s")
 print_info "Task Finished! (finished in $((build_task_end_time - build_task_start_time)) seconds)"
