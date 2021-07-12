@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+set -e
+cd "$(dirname "$0")"
+test $# -gt 1 && echo "${BASH_SOURCE[0]}: Too many arguments!" && exit 1
+test $# = 1 && if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+    echo -e "${BASH_SOURCE[0]} Usage:\n    <none> : Build with Configured Options\n    --minify or -m : Minify Builds"
+    exit 0
+fi
+
+function print_info() {
+    if [ "$2" = 'error' ]; then
+        echo -e "\033[1m[\033[31mERROR\033[0m\033[1m] >>> $1\033[0m"
+    elif [ "$2" = 'warn' ]; then
+        echo -e "\033[1m[\033[34mWARN\033[0m\033[1m] >>> $1\033[0m"
+    else
+        echo -e "\033[1m[\033[32mINFO\033[0m\033[1m] >>> $1\033[0m"
+    fi
+}
+trap 'print_info "Something went wrong, please check your configuration. (::$?)" error' ERR
+
+function enum_filename() {
+    for file in `command ls "$1"`; do
+        if [ -d "$1/${file}" ]; then
+            enum_filename "$1/${file}"
+        else
+            echo "$1/${file}"
+        fi
+    done
+}
+
+# Set Options
+build_source=source
+build_target=export
+build_minify=false
+if [ -f build.conf ]; then
+    source build.conf
+fi
+test $# = 1 && if [ "$1" = "--minify" ] || [ "$1" = "-m" ]; then
+    build_minify=true
+fi
+
+# Check Yue Compiler
+if hash yue 2>/dev/null; then
+    print_info "Found Compiler - $(yue -v)"
+else
+    print_info 'Yue Compiler is required but not found. Aborting...' error
+    exit 2
+fi
+
+# Check Source Directory
+if [ ! -d "${build_source}" ] || [ "$(ls -A ${build_source})" = "" ]; then
+    print_info "Cannot access source directory. Aborting..." error
+    exit 2
+fi
+
+# Cleaning Up
+if [ -d "${build_target}" ]; then
+    if [ ! "$(ls -A ${build_target})" = "" ]; then
+        print_info 'Cleaning up...'
+        rm -rf "${build_target}"
+    fi
+fi
+
+# Build
+mkdir -p "${build_target}"
+print_info "Build Task: ${build_source} -> ${build_target} (minify: ${build_minify})"
+build_task_start_time=$(date "+%s")
+yue "${build_source}" -t "${build_target}" `if [ "${build_minify}" = true ]; then echo '-m'; fi`
+enum_filename ${build_source} | while read current_filename; do
+    if [ ! "${current_filename##*.}" = "yue" ]; then
+        mkdir -p `echo \`dirname "${current_filename}"\` | sed "s/^${build_source}\//${build_target}\//"`
+        cp "${current_filename}" `echo "${current_filename}" | sed "s/^${build_source}\//${build_target}\//"`
+        echo "Copied ${current_filename}"
+    fi
+done
+build_task_end_time=$(date "+%s")
+print_info "Task Finished! (finished in $((build_task_end_time - build_task_start_time)) seconds)"
