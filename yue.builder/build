@@ -19,11 +19,9 @@ function print_info() {
 trap 'print_info "Something went wrong, please check your configuration. (::$?)" error' ERR
 
 function enum_filename() {
-    for file in `command ls "$1"`; do
-        if [ -d "$1/${file}" ]; then
-            enum_filename "$1/${file}"
-        else
-            echo "$1/${file}"
+    find "$1" | while read filename; do
+        if [ -f "${filename}" ]; then
+            echo "${filename}"
         fi
     done
 }
@@ -69,7 +67,7 @@ yue "${build_source}" -t "${build_target}" `if [ "${build_minify}" = true ]; the
 enum_filename ${build_source} | while read current_filename; do
     if [ ! "${current_filename##*.}" = "yue" ]; then
         mkdir -p `echo \`dirname "${current_filename}"\` | sed "s/^${build_source}\//${build_target}\//"`
-        cp "${current_filename}" `echo "${current_filename}" | sed "s/^${build_source}\//${build_target}\//"`
+        cp "${current_filename}" "$(echo "${current_filename}" | sed "s/^${build_source}\//${build_target}\//")"
         echo "Copied ${current_filename}"
     fi
 done
