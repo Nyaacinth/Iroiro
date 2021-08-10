@@ -27,6 +27,7 @@ function enum_filename() {
 }
 
 # Set Options
+set -a
 build_source=source
 build_target=export
 build_hooks=hooks
@@ -37,6 +38,7 @@ fi
 test $# = 1 && if [ "$1" = "--minify" ] || [ "$1" = "-m" ]; then
     build_minify=true
 fi
+set +a
 
 # Check Yue Compiler
 if hash yue 2>/dev/null; then
@@ -75,7 +77,7 @@ done
 if [ -d "${build_hooks}" ] && [ ! "$(ls -A ${build_hooks})" = "" ]; then
     enum_filename "${build_hooks}" | while read current_filename; do
         print_info "Running Hooks Provided by ${current_filename}" note
-        source "${current_filename}"
+        "$SHELL" "${current_filename}"
     done
 fi
 build_task_end_time=$(date "+%s")
