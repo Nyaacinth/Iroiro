@@ -1,0 +1,76 @@
+import "talkies"
+import "narrator"
+import "utils.assets_loader"
+
+Message =
+    index#: talkies
+    -- 播放脚本，适用于大段剧情
+    play: (path_or_story) ->
+        local story
+        if type(path_or_story) == "string"
+            file_content = love.filesystem.read "$/scripts/#{path_or_story::gsub("%.", "/")}.ink" -- 将参数中的"."更换为"/"并在头部粘贴"$/scripts/"前缀，在尾部粘贴".ink"后缀，得到路径读取文件
+            story = file_content |> narrator.parseBook |> narrator.initStory -- 调用 narrator 解析脚本获得 story 对象
+        elseif type(path_or_story) == "table" -- 若参数为 table 则视为传递了 story 对象
+            story = path_or_story
+        speed = if story.variables['Speed'] == false or story.variables['Speed'] == nil -- 对话速度，由于 InkScript 无空值，将 false 视为空
+            nil
+        else
+            assert type(story.variables['Speed']) == "number", "InkScript variable \"Speed\" should be a number"
+            story.variables['Speed']
+        avatar = if story.variables['Avatar'] == false or story.variables['Avatar'] == nil -- 角色头像，同上并调用 assets_loader 加载
+            nil
+        else
+            assets_loader.image[story.variables['Avatar']]
+        sound = if story.variables['Sound'] == false or story.variables['Sound'] == nil -- 讲话音效，同上
+            nil
+        else
+            assets_loader.audio.static[story.variables['Sound']]
+        title = if story.variables['Title'] == false or story.variables['Title'] == nil -- 标题
+            nil
+        else
+            assert type(story.variables['Title']) == "string", "InkScript variable \"Title\" should be a string"
+            story.variables['Title']
+        story::observe "Title", (value) -> -- 设置回调，应用来自 InkScript 的变量修改
+            assert(type(value) == "string" or value == false, "InkScript variable \"Title\" should be a string")
+            title = if value == false then nil else value
+        story::observe "Sound", (value) -> -- 同上
+            sound = if value == false then nil else assets_loader.audio.static[value]
+        story::observe "Avatar", (value) -> -- 同上
+            avatar = if value == false then nil else assets_loader.image[value]
+        story::observe "Speed", (value) -> -- 同上
+            assert(type(value) == "number" or value == false, "InkScript variable \"Speed\" should be a number")
+            speed = if value == false then nil else value
+        story::begin! -- 开始读取
+        continue_story = -> -- 遍历读取直到无可读 函数
+            if story::canContinue!
+                paragraph = story::continue 1
+                talkies.say(
+                    title -- 标题
+                    paragraph.text -- 文本
+                    do -- 设置选项，应用 对话速度、角色头像、讲话音效
+                        if story::canChoose!
+                            choices = story::getChoices!
+                            {
+                                options: for i, choice in ipairs choices -- 遍历 choices，读取每一个选项的文本并设置选择支 callback 为 story::choose <选择支编号>
+                                    {
+                                        choice.text,
+                                        -> story::choose i
+                                    }
+                                oncomplete: continue_story
+                                talkSound: sound
+                                textSpeed: speed
+                                image: avatar
+                            }
+                        else
+                            {
+                                oncomplete: continue_story
+                                talkSound: sound
+                                textSpeed: speed
+                                image: avatar
+                            }
+                )
+        continue_story! -- 立即开始遍历
+    load: (ink_modpath) ->
+        file_content = love.filesystem.read "$/scripts/#{ink_modpath::gsub("%.", "/")}.ink"
+        return file_content |> narrator.parseBook |> narrator.initStory
+return Message

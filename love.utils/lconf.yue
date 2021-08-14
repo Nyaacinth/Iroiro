@@ -1,0 +1,42 @@
+import "lua_table"
+import "log"
+
+lconf_instances = {}
+
+class Lconf
+    new: (identity, defaults = {}) =>
+        if identity and lconf_instances[identity] then error "Attempted to create multiple Lconf instance with same identity \"#{identity}\""
+        @_identity = identity or "#{os.date("%Y%m%d%H%M%S")}_temp"
+        if love.filesystem.getInfo "#{@_identity}.lconf", "file"
+            for key, value in pairs love.filesystem.load("#{@_identity}.lconf")!
+                if key != "_identity"
+                    @[key] = value
+            log.info "Loaded config file #{@_identity}.lconf"
+        else
+            for key, value in pairs defaults
+                if key != "_identity"
+                    @[key] = value
+            love.filesystem.write "#{@_identity}.lconf", lua_table.encode defaults
+            log.info "Created config file #{@_identity}.lconf"
+        lconf_instances[@_identity] = self
+    save: =>
+        if @__name == "Lconf"
+            for _, obj in pairs lconf_instances
+                obj::save!
+            return
+        elseif not lconf_instances[@_identity]
+            log.warn "Attempted to save config file #{@_identity}.lconf, but the instance of it has been destroyed, if you noticed this in a release please contact the developer"
+            return
+        data = {}
+        for key, value in pairs self
+            if key != "_identity"
+                data[key] = value
+        if love.filesystem.write "#{@_identity}.lconf", lua_table.encode data
+            log.info "Config file #{@_identity}.lconf saved successfully"
+        else
+            log.warn "Could not save config file #{@_identity}.lconf, please check your configuration"
+    destroy: =>
+        if @__name == "Lconf" then error "Attempted to destroy Lconf class, please check your configuration"
+        love.filesystem.remove "#{@_identity}.lconf"
+        lconf_instances[@_identity] = nil
+        log.info "Removed config file #{@_identity}.lconf and destroyed its instance"

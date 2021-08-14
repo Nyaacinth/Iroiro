@@ -1,0 +1,48 @@
+base_url = "$/assets"
+
+audio_formats = {
+    "wav", "mp3", "ogg", "oga", "ogv", "699", "amf",
+    "ams", "dbm", "dmf", "dsm", "far", "it", "j2b",
+    "mdl", "med", "mod", "mt2", "mtm", "okt", "psm",
+    "s3m", "stm", "ult", "umx", "xm", "abc", "mid",
+    "pat", "flac"
+}
+
+image_formats = {"jpg", "jpeg", "png", "bmp", "tga", "hdr", "pic", "exr"}
+
+font_formats = {"ttf", "otf", "ttc"}
+
+Assets =
+    audio:
+        static:
+            index#: (key) =>
+                for format in *audio_formats
+                    if love.filesystem.getInfo "#{base_url}/audio/#{key}.#{format}", "file"
+                        @[key] = love.audio.newSource "#{base_url}/audio/#{key}.#{format}", "static"
+                        return @[key]
+                error "Could not find audio: #{base_url}/audio/#{key}.* [static]"
+        stream:
+            index#: (key) =>
+                for format in *audio_formats
+                    if love.filesystem.getInfo "#{base_url}/audio/#{key}.#{format}", "file"
+                        @[key] = love.audio.newSource "#{base_url}/audio/#{key}.#{format}", "stream"
+                        return @[key]
+                error "Could not find audio: #{base_url}/audio/#{key}.* [stream]"
+    image:
+        index#: (key) =>
+            for format in *image_formats
+                if love.filesystem.getInfo "#{base_url}/images/#{key}.#{format}", "file"
+                    @[key] = love.graphics.newImage "#{base_url}/images/#{key}.#{format}"
+                    return @[key]
+            error "Could not find image: #{base_url}/images/#{key}.*"
+    font:
+        index#: (key) =>
+            for format in *font_formats
+                if love.filesystem.getInfo "#{base_url}/fonts/#{key}.#{format}", "file"
+                    @[key] =
+                        index#: (font_tbl, size) ->
+                            font_tbl[size] = love.graphics.newFont "#{base_url}/fonts/#{key}.#{format}", size
+                            return font_tbl[size]
+                    return @[key]
+            error "Could not find font: #{base_url}/fonts/#{key}.*"
+return Assets
