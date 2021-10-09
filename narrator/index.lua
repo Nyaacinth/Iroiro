@@ -194,6 +194,15 @@ function Narrator.initStory(book)
   return story
 end
 
+-- Load and auto init (customized)
+function Narrator.load(path)
+  return Narrator.initStory(
+    Narrator.parseBook(
+      (assert(love.filesystem.read(path), "File not found: " .. tostring(path)))
+    )
+  )
+end
+
 return Narrator
 end)
 __bundle_register("narrator.story", function(require, _LOADED, __bundle_register, __bundle_modules)
@@ -269,7 +278,6 @@ function Story:continue(steps)
   end
 
   local steps = steps or 0
-  local singleMode = steps == 1
 
   steps = steps > 0 and steps or #self.paragraphs
   steps = steps > #self.paragraphs and #self.paragraphs or steps
@@ -284,7 +292,7 @@ function Story:continue(steps)
     table.remove(self.paragraphs, 1)
   end
 
-  return singleMode and lines[1] or lines
+  return lines
 end
 
 --- Does the story have choices to output or not.
