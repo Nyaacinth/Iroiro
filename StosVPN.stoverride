@@ -1,0 +1,17 @@
+name: StosVPN
+desc: "StosVPN implemented in Stash Override"
+author: "Nyaacinth"
+category: "StosVPN"
+
+proxies:
+  - name: wireguard
+    type: wireguard
+    server: 127.0.0.1
+    port: 51820
+    ip: 10.7.0.10
+    private-key: AIIeeUDvk3NeAFJ9BWCQvPJize/9WZibMnGJ/0rt5k4=
+    public-key: kHDoekeYhBvfW9a9UQ+UCmpbG423eejTjcjW+DT+JF0=
+    keepalive: 25
+
+rules:
+  - IP-CIDR,10.7.0.1/32,wireguard
